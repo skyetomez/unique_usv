@@ -4,10 +4,10 @@ import pathlib
 
 import numpy as np
 import tensorflow as tf
-from nn import build_model
+from nn import build_cnn1d_model, get_checkpoints
 from pp import load_discrete_dataset, train_test_split
 
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
 
 # os.environ["TF_ENABLE_ONEDNN_OPTS"] = 0
 
@@ -33,21 +33,23 @@ train_set, test_set = load_discrete_dataset(path=path)
 
 
 # ------------ create train,val, test ------------
-print("Prepping Dataset")                            
-train_set = train_set.shuffle(buffer_size = PREFETCH_BUFFER_SIZE,reshuffle_each_iteration=False)
+print("Prepping Dataset")
+train_set = train_set.shuffle(
+    buffer_size=PREFETCH_BUFFER_SIZE, reshuffle_each_iteration=False
+)
 train_set = train_set.batch(GLOBAL_BATCH_SIZE)
 train_set = train_set.prefetch(buffer_size=PREFETCH_BUFFER_SIZE)
 
 
-
-test_set = test_set.shuffle(buffer_size = PREFETCH_BUFFER_SIZE,reshuffle_each_iteration=False)
+test_set = test_set.shuffle(
+    buffer_size=PREFETCH_BUFFER_SIZE, reshuffle_each_iteration=False
+)
 test_set = test_set.batch(GLOBAL_BATCH_SIZE)
 test_set = test_set.prefetch(buffer_size=PREFETCH_BUFFER_SIZE)
 
 
-
 # ------------ build model ------------
-model = build_model()
+model = build_cnn1d_model()
 
 
 model.compile(
@@ -59,15 +61,16 @@ model.compile(
     ],  # Check metrics
 )
 
+model_callbacks = get_checkpoints("")
 
 # ---------- train model -----------
 
 # multiprocessing?
-model.fit(
+history = model.fit(
     x=train_set,
     verbose="auto",
     callbacks=None,
-    epochs = NUM_EPOCHS,
+    epochs=NUM_EPOCHS,
 )
 
 
