@@ -32,24 +32,48 @@ def build_cnn1d_model(
     )  # add normalization layer
     model = tf.keras.Model(inputs=_input_, outputs=_output_)
     print("model built!")
+
+    model.compile(
+        optimizer=tf.keras.optimizers.Adam(learning_rate=1e-3),  # Check optimizers
+        loss=tf.keras.losses.CategoricalCrossentropy(),  # Check losses
+        metrics=[
+            tf.keras.metrics.CategoricalCrossentropy(),
+            tf.keras.metrics.Accuracy(),
+            tf.keras.metrics.MeanSquaredError(),
+        ],  # Check metrics
+    )
+    print("model compiled")
     return model
 
 
-def build_cnn2d_model(input_shape: tuple, batch_size: int = GOBAL_BATCH_SIZE):
+def build_cnn2d_model(
+    input_shape: tuple, num_classes: int, batch_size: int = GOBAL_BATCH_SIZE
+):
     _specs_ = input_shape
     print(f"building 2D CNN of with input shape {_specs_} ")
     _input_ = Input(shape=_specs_, batch_size=batch_size)
     x = tf.keras.layers.Cropping2D(cropping=CROP_DIMS)(_input_)
     x = tf.keras.layers.Rescaling(scale=1.0 / 255)(x)
     # x = tf.keras.layes.Resizing() may not be necessary
-    _output_ = Conv2D(
+    x = Conv2D(
         filters=NUM_FILTERS,  # How to choose number of filters
         kernel_size=NUM_KERNELS,  # How to choose kernel size
         strides=STRIDES,  # How to choose strides
         padding=PADDING,
     )(x)
-    model = tf.keras.Model(inputs=_input_, outputs=_output_)
+    x = tf.keras.layers.Flatten()(x)
+    x = tf.keras.layers.Dense(num_classes)(x)
+    model = tf.keras.Model(inputs=_input_, outputs=x)
     print("model built!")
+
+    model.compile(
+        optimizer=tf.keras.optimizers.Adam(),  # Check optimizers
+        loss=tf.keras.losses.CategoricalCrossentropy(),  # Check losses
+        metrics=[
+            tf.keras.metrics.CategoricalCrossentropy(),
+        ],  # Check metrics
+    )
+    print("model compiled")
     return model
 
 
@@ -72,7 +96,7 @@ def get_checkpoints(model_save_path, monitor: str = "val_accuracy", best: bool =
         save_weights_only=False,
     )
 
-    tnsbrd = TensorBoard()
+    tnsbrd = TensorBoard(histogram_freq=1)
 
     return [earlystop, chkpt, tnsbrd]
 

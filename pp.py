@@ -112,29 +112,32 @@ def load_discrete_dataset(path):
     return train, test, val
 
 
-def load_image_dataset(directory: str):
+def load_image_dataset(directory: str, batch_size: int = 32):
     """Generate image dataset based on directory structure.
 
     Args:
         directory (str): either continuous or discrete
 
     Returns:
-        dataset (tf.data.Dataset): returns a dataset object of the images.
+        dataset (tf.data.Dataset): returns a tuple of datasets. 
+        one tuple is the training set and the other is the validation set
+        both have shape (images, labels) here images has shape (batch_size, image_size[0], image_size[1], num_channels), 
+        and labels are one-hot encoded vectors
     """
     root_dir = pathlib.Path("/work/skylerthomas_umass_edu/current_projects/uniqueness")
     path = root_dir / directory
     ds = tf.keras.utils.image_dataset_from_directory(
         path,
         labels="inferred",
-        label_mode="int",
+        label_mode="categorical",
         class_names=None,
         color_mode="rgb",
-        batch_size=32,
-        image_size=(461, 615),
+        batch_size=batch_size,
+        image_size=(600, 800),
         shuffle=True,
-        seed=None,
-        validation_split=None,
-        subset=None,
+        seed=01060,
+        validation_split=0.2,
+        subset='both',
         interpolation="bilinear",
         follow_links=False,
         crop_to_aspect_ratio=True,
