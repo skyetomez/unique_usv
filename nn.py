@@ -20,30 +20,32 @@ def build_cnn1d_model(
     batch_size: int = GOBAL_BATCH_SIZE, seq_len: int = SMALLEST_VEC_LEN
 ):
     _specs_ = (10, seq_len)
-    print(f"building 1D CNN of as {_specs_} ")
+    print(f"building 1D CNN with input shape {_specs_} ")
     _input_ = Input(shape=_specs_, batch_size=batch_size)
     _output_ = Conv1D(
         filters=NUM_FILTERS,
         kernel_size=NUM_KERNELS,
         strides=STRIDES,
         padding=PADDING,
-    )(_input_)
+    )(
+        _input_
+    )  # add normalization layer
     model = tf.keras.Model(inputs=_input_, outputs=_output_)
     print("model built!")
     return model
 
 
-def build_cnn2d_model(batch_size: int = GOBAL_BATCH_SIZE, seq_len: int = 1):
-    _specs_ = (10, seq_len)
-    print(f"building 2D CNN of as {_specs_} ")
+def build_cnn2d_model(input_shape: tuple, batch_size: int = GOBAL_BATCH_SIZE):
+    _specs_ = input_shape
+    print(f"building 2D CNN of with input shape {_specs_} ")
     _input_ = Input(shape=_specs_, batch_size=batch_size)
     x = tf.keras.layers.Cropping2D(cropping=CROP_DIMS)(_input_)
     x = tf.keras.layers.Rescaling(scale=1.0 / 255)(x)
     # x = tf.keras.layes.Resizing() may not be necessary
     _output_ = Conv2D(
-        filters=NUM_FILTERS,
-        kernel_size=NUM_KERNELS,
-        strides=STRIDES,
+        filters=NUM_FILTERS,  # How to choose number of filters
+        kernel_size=NUM_KERNELS,  # How to choose kernel size
+        strides=STRIDES,  # How to choose strides
         padding=PADDING,
     )(x)
     model = tf.keras.Model(inputs=_input_, outputs=_output_)
@@ -51,7 +53,7 @@ def build_cnn2d_model(batch_size: int = GOBAL_BATCH_SIZE, seq_len: int = 1):
     return model
 
 
-def get_checkpoints(model_save_path, monitor: str = "val_loss", best: bool = True):
+def get_checkpoints(model_save_path, monitor: str = "val_accuracy", best: bool = True):
 
     earlystop = EarlyStopping(
         monitor=monitor,
@@ -66,6 +68,7 @@ def get_checkpoints(model_save_path, monitor: str = "val_loss", best: bool = Tru
         filepath=model_save_path,
         monitor=monitor,
         save_best_only=best,
+        mode="auto",
         save_weights_only=False,
     )
 

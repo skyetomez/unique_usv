@@ -95,8 +95,9 @@ def _shuffle_(data: NDArray, labels: NDArray) -> List[Tuple[NDArray, NDArray]]:
 def _train_test_split_(ds, percent: float = 0.65, val: bool = False):
     split = int(len(ds) * percent)
     train = ds[:split]
-    test = ds[split:]
-    return train, test
+    test = ds[split : split + split // 2]
+    val = ds[split + split // 2 :]
+    return train, test, val
 
 
 def load_discrete_dataset(path):
@@ -106,19 +107,36 @@ def load_discrete_dataset(path):
     print(f"shuffling data set")
     tmp = _shuffle_(data, labels)
     print(f"creating splits")
-    train, test = _train_test_split_(tmp, percent=0.65)
+    train, test, val = _train_test_split_(tmp, percent=0.65)
     print("returning test and train set ")
-    return tf.data.Dataset.from_tensor_slices(train, test)
+    return train, test, val
 
 
-# def train_test_split(ds, percent: float = 0.5, val: bool = False):
-#    train_set, test_set = tf.keras.utils.split_dataset(ds, right_size=percent)
-#    if not val:
-#        val_per = 1 - percent // 2
-#        test_set, val_set = tf.keras.utils.split_dataset(test_set, left_size=val_per)
-#        print(
-#            f"making train {percent}%, test {val_per}%  and val {val_per}% split sets"
-#        )
-#        return train_set, test_set, val_set
-#    print(f"making train {percent}% and test splits {1-percent}%")
-#    return train_set, test_set
+def load_image_dataset(directory: str):
+    """Generate image dataset based on directory structure.
+
+    Args:
+        directory (str): either continuous or discrete
+
+    Returns:
+        dataset (tf.data.Dataset): returns a dataset object of the images.
+    """
+    root_dir = pathlib.Path("/work/skylerthomas_umass_edu/current_projects/uniqueness")
+    path = root_dir / directory
+    ds = tf.keras.utils.image_dataset_from_directory(
+        path,
+        labels="inferred",
+        label_mode="int",
+        class_names=None,
+        color_mode="rgb",
+        batch_size=32,
+        image_size=(461, 615),
+        shuffle=True,
+        seed=None,
+        validation_split=None,
+        subset=None,
+        interpolation="bilinear",
+        follow_links=False,
+        crop_to_aspect_ratio=True,
+    )
+    return ds

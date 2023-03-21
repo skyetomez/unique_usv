@@ -5,7 +5,11 @@ import pathlib
 import numpy as np
 import tensorflow as tf
 from nn import build_cnn1d_model, get_checkpoints
-from pp import load_discrete_dataset, train_test_split
+from pp import load_discrete_dataset
+
+from typing import Tuple
+from numpy.typing import NDArray
+
 
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
 
@@ -27,25 +31,16 @@ if path is None:
 
 
 print("Loading Dataset")
-train_set, test_set = load_discrete_dataset(path=path)
+train_set, test_set, val_set = load_discrete_dataset(path=path)
 # samples are time segments from the CWT per LE-22_036.. etc.
 # (label, sample) , (dir_name, npy)
 
 
-# ------------ create train,val, test ------------
-print("Prepping Dataset")
-train_set = train_set.shuffle(
-    buffer_size=PREFETCH_BUFFER_SIZE, reshuffle_each_iteration=False
-)
-train_set = train_set.batch(GLOBAL_BATCH_SIZE)
-train_set = train_set.prefetch(buffer_size=PREFETCH_BUFFER_SIZE)
-
-
-test_set = test_set.shuffle(
-    buffer_size=PREFETCH_BUFFER_SIZE, reshuffle_each_iteration=False
-)
-test_set = test_set.batch(GLOBAL_BATCH_SIZE)
-test_set = test_set.prefetch(buffer_size=PREFETCH_BUFFER_SIZE)
+# ------------ help functions ------------
+def getdata(dataset)-> Tuple[NDArray,NDArray]:
+    x, y = zip(*dataset)
+    x,y = np.array(x), np.array(y)
+    return x, y
 
 
 # ------------ build model ------------
@@ -61,15 +56,17 @@ model.compile(
     ],  # Check metrics
 )
 
-model_callbacks = get_checkpoints("")
+model_callbacks = get_checkpoints("chkpts")
 
 # ---------- train model -----------
-
+x,y = getdata(train_set)
 # multiprocessing?
 history = model.fit(
-    x=train_set,
+    x=x,
+    y=y,
+    validation_data=getdata(val_set),
     verbose="auto",
-    callbacks=None,
+    callbacks=model_callbacks,
     epochs=NUM_EPOCHS,
 )
 
