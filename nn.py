@@ -1,18 +1,16 @@
 import tensorflow as tf
 from tensorflow import keras
-
+import keras_tuner as hp
 from keras.layers import Conv1D, Conv2D, Input
 from keras.callbacks import EarlyStopping, ModelCheckpoint, TensorBoard
 
 # Build model
-NUM_FILTERS = 1  # how to pick num of filters
-NUM_KERNELS = 1
+NUM_FILTERS = 64  # how to pick num of filters
+NUM_KERNELS = 8
 STRIDES = 1
 PADDING = "same"
 SMALLEST_VEC_LEN = 21762020
-
 CROP_DIMS = ((74, 68), (100, 100))  # px 74 off top and bottom, 102 off left and right
-
 GOBAL_BATCH_SIZE = 64
 
 
@@ -54,27 +52,83 @@ def build_cnn2d_model(
     _input_ = Input(shape=_specs_, batch_size=batch_size)
     x = tf.keras.layers.Cropping2D(cropping=CROP_DIMS)(_input_)
     x = tf.keras.layers.Rescaling(scale=1.0 / 255)(x)
-    # x = tf.keras.layes.Resizing() may not be necessary
+    x = tf.keras.layers.Resizing(height=512, width=512)(x)  # make multiple of 2
     x = Conv2D(
         filters=NUM_FILTERS,  # How to choose number of filters
         kernel_size=NUM_KERNELS,  # How to choose kernel size
         strides=STRIDES,  # How to choose strides
         padding=PADDING,
     )(x)
+    x = tf.keras.layers.MaxPool2D()(x)
+    x = tf.keras.layers.BatchNormalization()(x)
     x = tf.keras.layers.Flatten()(x)
     x = tf.keras.layers.Dense(num_classes)(x)
     model = tf.keras.Model(inputs=_input_, outputs=x)
-    print("model built!")
-
+    hp_learning_rate = 1e-4
     model.compile(
-        optimizer=tf.keras.optimizers.Adam(),  # Check optimizers
-        loss=tf.keras.losses.CategoricalCrossentropy(),  # Check losses
+        optimizer=tf.keras.optimizers.Adam(
+            learning_rate=hp_learning_rate
+        ),  # Check optimizers
+        loss=tf.keras.losses.CategoricalCrossentropy(from_logits=True),  # Check losses
         metrics=[
-            tf.keras.metrics.CategoricalCrossentropy(),
+            tf.keras.metrics.CategoricalCrossentropy(from_logits=True),
+            "accuracy",
         ],  # Check metrics
     )
     print("model compiled")
     return model
+
+
+# --------PENDING-----------#
+# def hp_tuning_cnn2d_model(hp):
+
+#     _BATCH_ = 64
+#     _CROP_DIMS_ = ((74, 68), (100, 100))
+#     _NUM_FILTERS_ = 64  # how to pick num of filters
+#     _KERNEL_ = 16
+#     _STRIDES_ = _KERNEL_ // 2
+#     _PADDING_ = "same"
+
+#     _specs_ = (600, 800, 3)
+
+#     print(f"building 2D CNN of with input shape {_specs_} ")
+#     _input_ = tf.keras.layers.Input(shape=_specs_, batch_size=_BATCH_)
+#     x = tf.keras.layers.Cropping2D(cropping=CROP_DIMS)(_input_)
+#     x = tf.keras.layers.Rescaling(scale=1.0 / 255)(x)
+#     x = tf.keras.layers.Resizing(height = 512, width= 512) (x)# make multiple of 2
+
+#     #TUNE#
+#     x = tf.keras.layers.Conv2D(
+#         filters=NUM_FILTERS,  # This is also called the depth i.e. num of neurons
+#         kernel_size=#TUNE#,  # How to choose kernel size
+#         strides=STRIDES,  # overlap of sliding window
+#         padding=PADDING,
+#     )(x)
+#     x = tf.keras.layers.MaxPool2D() (x)
+#     x = tf.keras.layers.BatchNormalization()(x)
+
+#     #TUNE#
+
+#     x = tf.keras.layers.Flatten()(x)
+#     x = tf.keras.layers.Dense(num_classes)(x)
+#     model = tf.keras.Model(inputs=_input_, outputs=x)
+#     print("model built!")
+
+
+#     hp_learning_rate = hp.Choice('learning_rate', values=[1e-2, 1e-3, 1e-4])
+
+
+#     model.compile(
+#         optimizer=tf.keras.optimizers.Adam(learning_rate = hp_learning_rate),  # Check optimizers
+#         loss=tf.keras.losses.CategoricalCrossentropy(from_logits=True),  # Check losses
+#         metrics=[
+#             tf.keras.metrics.CategoricalCrossentropy(from_logits=True),
+#             "accuracy",
+#         ],  # Check metrics
+#     )
+#     print("model compiled")
+#     return model
+# --------PENDING-----------#
 
 
 def get_checkpoints(model_save_path, monitor: str = "val_accuracy", best: bool = True):
@@ -96,13 +150,11 @@ def get_checkpoints(model_save_path, monitor: str = "val_accuracy", best: bool =
         save_weights_only=False,
     )
 
-    tnsbrd = TensorBoard(histogram_freq=1)
-
-    return [earlystop, chkpt, tnsbrd]
+    return [earlystop, chkpt]
 
 
 if __name__ == "__main__":
+    pass
+    # model = build_cnn1d_model()
 
-    model = build_cnn1d_model()
-
-    model.build(input_shape=(1000, 10, 2176202))
+    # model.build(input_shape=(1000, 10, 2176202))
