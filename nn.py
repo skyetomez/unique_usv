@@ -44,12 +44,21 @@ def build_cnn1d_model(
     return model
 
 
-def build_cnn2d_model(
-    input_shape: tuple, num_classes: int, batch_size: int = GOBAL_BATCH_SIZE
-):
+def build_cnn2d_model(input_shape: tuple, num_classes: int):
+    """CANNOT BE PASSED BATCH SIZE IF BEING LOADED WITH
+
+
+    Args:
+        input_shape (tuple): SHAPE OF IMAGE BASED ON tf.keras.utils.image_from_dataset
+        num_classes (int): NUM OF DIRECTORIES CONTAINING FILES
+
+    Returns:
+        _type_: RETURNS MODEL
+    """
+
     _specs_ = input_shape
     print(f"building 2D CNN of with input shape {_specs_} ")
-    _input_ = Input(shape=_specs_, batch_size=batch_size)
+    _input_ = Input(shape=_specs_)
     x = tf.keras.layers.Cropping2D(cropping=CROP_DIMS)(_input_)
     x = tf.keras.layers.Rescaling(scale=1.0 / 255)(x)
     x = tf.keras.layers.Resizing(height=512, width=512)(x)  # make multiple of 2
@@ -77,58 +86,6 @@ def build_cnn2d_model(
     )
     print("model compiled")
     return model
-
-
-# --------PENDING-----------#
-# def hp_tuning_cnn2d_model(hp):
-
-#     _BATCH_ = 64
-#     _CROP_DIMS_ = ((74, 68), (100, 100))
-#     _NUM_FILTERS_ = 64  # how to pick num of filters
-#     _KERNEL_ = 16
-#     _STRIDES_ = _KERNEL_ // 2
-#     _PADDING_ = "same"
-
-#     _specs_ = (600, 800, 3)
-
-#     print(f"building 2D CNN of with input shape {_specs_} ")
-#     _input_ = tf.keras.layers.Input(shape=_specs_, batch_size=_BATCH_)
-#     x = tf.keras.layers.Cropping2D(cropping=CROP_DIMS)(_input_)
-#     x = tf.keras.layers.Rescaling(scale=1.0 / 255)(x)
-#     x = tf.keras.layers.Resizing(height = 512, width= 512) (x)# make multiple of 2
-
-#     #TUNE#
-#     x = tf.keras.layers.Conv2D(
-#         filters=NUM_FILTERS,  # This is also called the depth i.e. num of neurons
-#         kernel_size=#TUNE#,  # How to choose kernel size
-#         strides=STRIDES,  # overlap of sliding window
-#         padding=PADDING,
-#     )(x)
-#     x = tf.keras.layers.MaxPool2D() (x)
-#     x = tf.keras.layers.BatchNormalization()(x)
-
-#     #TUNE#
-
-#     x = tf.keras.layers.Flatten()(x)
-#     x = tf.keras.layers.Dense(num_classes)(x)
-#     model = tf.keras.Model(inputs=_input_, outputs=x)
-#     print("model built!")
-
-
-#     hp_learning_rate = hp.Choice('learning_rate', values=[1e-2, 1e-3, 1e-4])
-
-
-#     model.compile(
-#         optimizer=tf.keras.optimizers.Adam(learning_rate = hp_learning_rate),  # Check optimizers
-#         loss=tf.keras.losses.CategoricalCrossentropy(from_logits=True),  # Check losses
-#         metrics=[
-#             tf.keras.metrics.CategoricalCrossentropy(from_logits=True),
-#             "accuracy",
-#         ],  # Check metrics
-#     )
-#     print("model compiled")
-#     return model
-# --------PENDING-----------#
 
 
 def get_checkpoints(model_save_path, monitor: str = "val_accuracy", best: bool = True):

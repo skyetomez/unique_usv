@@ -46,3 +46,25 @@ def plot_loss(history, save: bool = True, name: str = "") -> None:
     else:
         plt.show()
     return None
+
+
+def plot_accuracy(history, save: bool = True, name: str = "") -> None:
+    if save:
+        assert name != "", "Name cannot be empty"
+
+    epochs = history.params["epochs"]
+    loss = history.history["accuracy"]
+    val_loss = history.history["val_accuracy"]
+    plt.figure(figsize=[7, 5], dpi=200)
+    plt.style.use("ggplot")
+    plt.plot(range(1, epochs + 1), loss, label="loss")
+    plt.plot(range(1, epochs + 1), val_loss, label=" validation loss")
+    plt.ylabel("accuracy")
+    plt.xlabel("epochs")
+    plt.legend()
+    if save:
+        plt.savefig(
+            name, dpi="figure", format="jpg", pad_inches=0.1, orientation="landscape"
+        )
+    else:
+        plt.show()
